@@ -1,0 +1,15 @@
+export const Colors = {
+  background: "#f9f4ef",
+  secondary: "#eaddcf",
+  main:"#fffffe",
+  storke:"#020826",
+  tertiary:"#f25042",
+  white: "#FFFFFF",
+  black: "#000000",
+  gray: "#9CA3AF",
+  button: "#8c7851",
+  buttonText: "#fffffe",
+  heading: "#020826",
+  paragraph:"#716040",
+  highlight: "#8c7851",
+};
