@@ -1,5 +1,6 @@
 import { Text, View, TouchableOpacity, StyleSheet } from "react-native";
-import Icon from "@react-native-vector-icons/ionicons";
+import Icon, { Ionicons } from "@react-native-vector-icons/ionicons";
+import { Colors } from "../constants/Colors";
 
 type HeaderProps = {
   variant?: "default" | "pdf";
@@ -12,11 +13,11 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
     return (
       <View style={styles.pdfHeader}>
         <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-          <Icon name="arrow-back" size={24} color="#fff" />
+          <Icon name="arrow-back" size={24} color={Colors.button} />
         </TouchableOpacity>
         <Text style={styles.pdfTitle}>PDF Viewer</Text>
         <TouchableOpacity onPress={onRotate} style={styles.iconButton}>
-          <Icon name="phone-portrait-outline" size={24} color="#fff" />
+          <Icon name="phone-portrait-outline" size={24} color={Colors.button} />
         </TouchableOpacity>
       </View>
     );
@@ -24,7 +25,24 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
 
   return (
     <View style={styles.defaultHeader}>
-      <Text style={styles.defaultTitle}>Header</Text>
+      <View style={{
+          display:"flex",
+          flexDirection:"row",
+          justifyContent: "space-between",
+          width:"100%"
+        }}>
+         <Text style={{ color: Colors.black, fontSize: 24,fontWeight:600 }}>
+        {/* {topHeader[0]?.subject} */}
+        গণিত সমাধান
+        </Text>
+        <View style={{display:"flex",flexDirection:"row",gap:10,alignItems:"center",backgroundColor:"#132a6d",paddingInline:15,borderRadius:20}}>
+          <Ionicons name="book" size={16} color="#fff" />
+          <Text style={{ color: Colors.white, fontSize: 16,fontWeight:500 }}>
+          {/* {topHeader[0]?.class} */}
+          নবম ও দশম শ্রেণি
+          </Text>
+        </View>
+       </View>
     </View>
   );
 }
@@ -33,7 +51,7 @@ const styles = StyleSheet.create({
   defaultHeader: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#1e1e2e",
+    backgroundColor: Colors.background,
     alignItems: "center",
   },
   defaultTitle: {
@@ -47,10 +65,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: "#1e1e2e",
+    backgroundColor: Colors.background,
   },
   pdfTitle: {
-    color: "#fff",
+    color: Colors.black,
     fontSize: 18,
     fontWeight: "600",
   },
