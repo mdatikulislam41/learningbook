@@ -31,13 +31,13 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
           justifyContent: "space-between",
           width:"100%"
         }}>
-         <Text style={{ color: Colors.black, fontSize: 24,fontWeight:600 }}>
+         <Text style={{ color: Colors.black, fontSize: 16,fontWeight:600 }}>
         {/* {topHeader[0]?.subject} */}
         গণিত সমাধান
         </Text>
         <View style={{display:"flex",flexDirection:"row",gap:10,alignItems:"center",backgroundColor:"#132a6d",paddingInline:15,borderRadius:20}}>
           <Ionicons name="book" size={16} color="#fff" />
-          <Text style={{ color: Colors.white, fontSize: 16,fontWeight:500 }}>
+          <Text style={{ color: Colors.white, fontSize: 14,fontWeight:500 }}>
           {/* {topHeader[0]?.class} */}
           নবম ও দশম শ্রেণি
           </Text>
@@ -49,8 +49,8 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
 
 const styles = StyleSheet.create({
   defaultHeader: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     backgroundColor: Colors.background,
     alignItems: "center",
   },
