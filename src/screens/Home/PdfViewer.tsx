@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Pdf from 'react-native-pdf';
 import Orientation from 'react-native-orientation-locker';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -11,7 +11,6 @@ export default function PdfViewer() {
   const { localFile } = route.params;
 
   const [isLandscape, setIsLandscape] = useState(false);
-  const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
   const [headerVisible, setHeaderVisible] = useState(true);
   const touchStart = React.useRef<{ x: number; y: number } | null>(null);
 
@@ -20,16 +19,16 @@ export default function PdfViewer() {
     : { uri: `file://${localFile}` };
 
   useEffect(() => {
-    const onChange = ({ window }: { window: any }) => setDimensions(window);
-    const sub = Dimensions.addEventListener('change', onChange);
-    return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
-    Orientation.lockToPortrait();
+    Orientation.unlockAllOrientations();
+    const onOrientationChange = (orientation: string) => {
+      const landscape =
+        orientation === 'LANDSCAPE-LEFT' || orientation === 'LANDSCAPE-RIGHT';
+      setIsLandscape(landscape);
+    };
+    Orientation.addOrientationListener(onOrientationChange);
     setHeaderVisible(true);
     return () => {
-      Orientation.lockToPortrait();
+      Orientation.removeOrientationListener(onOrientationChange);
       Orientation.unlockAllOrientations();
     };
   }, []);
@@ -51,11 +50,11 @@ export default function PdfViewer() {
   const handleRotate = () => {
     if (isLandscape) {
       Orientation.lockToPortrait();
+      setIsLandscape(false);
     } else {
       Orientation.lockToLandscape();
+      setIsLandscape(true);
     }
-    setIsLandscape(prev => !prev);
-    setTimeout(() => setDimensions(Dimensions.get('window')), 300);
   };
 
   const handleStart = (e: any) => {
@@ -83,9 +82,7 @@ export default function PdfViewer() {
     >
       <View style={styles.container} onTouchStart={handleStart} onTouchEnd={handleEnd}>
         <Pdf
-          key={`${dimensions.width}x${dimensions.height}`}
           source={source}
-          
           fitPolicy={0}
           style={styles.pdf}
           onError={error => console.log('PDF ERROR:', error)}

@@ -19,7 +19,11 @@ function App() {
 
   return (
     <SafeAreaProvider style={{backgroundColor:Colors.background}}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={Colors.background}
+        translucent={false}
+      />
       {/* <AppContent /> */}
       <AppNavigator/>
     </SafeAreaProvider>
