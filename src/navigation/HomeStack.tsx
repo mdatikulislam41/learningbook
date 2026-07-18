@@ -8,7 +8,7 @@ export default function HomeStack() {
     <Stack.Navigator screenOptions={{
       headerShown:false,
     }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="PdfViewer" component={PdfViewer} />
     </Stack.Navigator>
   )

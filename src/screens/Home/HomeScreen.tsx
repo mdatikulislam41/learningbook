@@ -18,7 +18,7 @@ type Chapter = {
   pdf_url: string;
 };
 type RootStackParamList = {
-  Home: undefined;
+  HomeScreen: undefined;
   PdfViewer: {
     localFile: string;
   };
@@ -26,7 +26,7 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "Home"
+  "HomeScreen"
 >;
 
 export default function HomeScreen() {

@@ -12,6 +12,8 @@ export default function PdfViewer() {
 
   const [isLandscape, setIsLandscape] = useState(false);
   const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const touchStart = React.useRef<{ x: number; y: number } | null>(null);
 
   const source = localFile.startsWith('file://')
     ? { uri: localFile }
@@ -25,11 +27,26 @@ export default function PdfViewer() {
 
   useEffect(() => {
     Orientation.lockToPortrait();
+    setHeaderVisible(true);
     return () => {
       Orientation.lockToPortrait();
       Orientation.unlockAllOrientations();
     };
   }, []);
+
+  useEffect(() => {
+    if (isLandscape) {
+      setHeaderVisible(false);
+    } else {
+      setHeaderVisible(true);
+    }
+  }, [isLandscape]);
+
+  const toggleHeader = () => {
+    if (isLandscape) {
+      setHeaderVisible(prev => !prev);
+    }
+  };
 
   const handleRotate = () => {
     if (isLandscape) {
@@ -41,13 +58,30 @@ export default function PdfViewer() {
     setTimeout(() => setDimensions(Dimensions.get('window')), 300);
   };
 
+  const handleStart = (e: any) => {
+    const { pageX, pageY } = e.nativeEvent;
+    touchStart.current = { x: pageX, y: pageY };
+  };
+
+  const handleEnd = (e: any) => {
+    if (!touchStart.current) return;
+    const { pageX, pageY } = e.nativeEvent;
+    const dx = Math.abs(pageX - touchStart.current.x);
+    const dy = Math.abs(pageY - touchStart.current.y);
+    touchStart.current = null;
+    if (dx < 10 && dy < 10) {
+      toggleHeader();
+    }
+  };
+
   return (
     <PageLayout
+      headerVisible={headerVisible}
       headerVariant="pdf"
       onBack={() => navigation.goBack()}
       onRotate={handleRotate}
     >
-      <View style={styles.container} >
+      <View style={styles.container} onTouchStart={handleStart} onTouchEnd={handleEnd}>
         <Pdf
           key={`${dimensions.width}x${dimensions.height}`}
           source={source}
