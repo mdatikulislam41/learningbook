@@ -13,7 +13,7 @@ type Formula = {
   serial:number;
 };
 
-export default function HistoryScreen() {
+export default function FormulaScreen() {
   const [formula, setFormula] = useState<Formula[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

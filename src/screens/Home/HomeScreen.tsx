@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import PageLayout from '../../components/PageLayout'
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { supabase } from '../../lib/supabase';
@@ -8,7 +8,7 @@ import { Colors } from '../../constants/Colors';
 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { downloadPdf } from '../../services/download';
+import { getOrDownloadPdf, isPdfDownloaded } from '../../services/download';
 
 type Chapter = {
   id: number;
@@ -33,53 +33,81 @@ export default function HomeScreen() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
- const navigation = useNavigation<NavigationProp>();
-   async function openPdf(pdfUrl: string) {
-  try {
-    // pdfsetLoading(true);
+    const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+    const [downloadedIds, setDownloadedIds] = useState<Record<number, boolean>>({});
+    const [refreshing, setRefreshing] = useState(false);
+    const [noInternet, setNoInternet] = useState(false);
+  const navigation = useNavigation<NavigationProp>();
+    async function loadChapters(isRefresh = false) {
+      if (isRefresh) {
+        setRefreshing(true);
+        setErrorMessage(null);
+        setNoInternet(false);
+      } else {
+        setLoading(true);
+      }
 
-    const localFile = await downloadPdf(pdfUrl, "classSix");
+      const { data, error } = await supabase
+        .from('chapters')
+        .select('id, title, chapter, boxbg, pdf_url')
+        .order('chapter', { ascending: true });
+
+      if (error) {
+        console.log('Supabase error:', error);
+        const isNetworkError =
+          error.message?.toLowerCase().includes('network') ||
+          error.message?.toLowerCase().includes('fetch') ||
+          error.code === 'PGRST000' && error.message?.toLowerCase().includes('failed');
+        setNoInternet(!!isNetworkError);
+        setErrorMessage(error.message);
+        setChapters([]);
+      } else {
+        const list = (data ?? []) as Chapter[];
+        setChapters(list);
+        const status: Record<number, boolean> = {};
+        await Promise.all(
+          list.map(async (c) => {
+            status[c.id] = await isPdfDownloaded(c.pdf_url, "classSix");
+          })
+        );
+        setDownloadedIds(status);
+      }
+
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+    async function openPdf(pdfUrl: string, id: number) {
+  try {
+    setDownloadProgress(0);
+
+    const { localFile } = await getOrDownloadPdf(
+      pdfUrl,
+      "classSix",
+      (percent) => {
+        setDownloadProgress(percent);
+      }
+    );
+    setDownloadedIds((prev) => ({ ...prev, [id]: true }));
     navigation.navigate("PdfViewer", {
       localFile: localFile,
     });
-    // navigation.push("PdfViewer");
-    //  Alert.alert("bangladesh",localFile);
-    
+
   } catch (e) {
     console.log(e);
+    Alert.alert("Error", "PDF download failed. Please try again.");
   } finally {
-    // pdfsetLoading(false);
+    setDownloadProgress(null);
   }
 }
-    useEffect(() => {
-        let cancelled = false;
-    
-        (async () => {
-        const { data, error } = await supabase
-          .from('chapters')
-          .select('id, title, chapter, boxbg, pdf_url')
-          .order('chapter', { ascending: true });
-    
-          if (cancelled) {
-            return;
-          }
-    
-          if (error) {
-            console.log('Supabase error:', error);
-            setErrorMessage(error.message);
-            setChapters([]);
-          } else {
-            setChapters((data ?? []) as Chapter[]);
-          }
-    
-          setLoading(false);
-        })();
-    
-        return () => {
-          cancelled = true;
-        };
+      useEffect(() => {
+        loadChapters();
       }, []);
-    
+
+      const onRefresh = () => loadChapters(true);
+      
       if (loading) {
         return (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -90,11 +118,29 @@ export default function HomeScreen() {
     
       if (errorMessage) {
         return (
-          <View style={{ flex: 1, padding: 16, justifyContent: 'center' }}>
-            <Text style={{ color: '#DC2626', marginBottom: 8 }}>
-              Could not load chapters
-            </Text>
-            <Text>{errorMessage}</Text>
+          <View style={{ flex: 1, padding: 16, justifyContent: 'center', alignItems: 'center' }}>
+            {noInternet ? (
+              <Text style={{ color: '#DC2626', marginBottom: 16, textAlign: 'center' }}>
+                Please turn on your data to load chapters.
+              </Text>
+            ) : (
+              <>
+                <Text style={{ color: '#DC2626', marginBottom: 8 }}>
+                  Could not load chapters
+                </Text>
+                <Text style={{ marginBottom: 16, textAlign: 'center' }}>{errorMessage}</Text>
+              </>
+            )}
+            <TouchableOpacity
+              style={[styles.card, { paddingHorizontal: 24, paddingVertical: 10, marginBottom: 0 }]}
+              activeOpacity={0.8}
+              disabled={refreshing}
+              onPress={() => loadChapters(true)}
+            >
+              {refreshing
+                ? <ActivityIndicator color={Colors.button} />
+                : <Text style={{ color: Colors.button, fontWeight: '600' }}>Try Again</Text>}
+            </TouchableOpacity>
           </View>
         );
       }
@@ -107,6 +153,7 @@ export default function HomeScreen() {
         );
       }
   return (
+    <>
 
     <PageLayout>
       <FlatList
@@ -114,6 +161,8 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBlockStart: 10, paddingInline: 20, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id.toString()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         renderItem={({ item }) => (
           <View>
             <TouchableOpacity
@@ -121,7 +170,7 @@ export default function HomeScreen() {
               key={item.id}
               activeOpacity={0.8}
               onPress={()=>{
-                  openPdf(item.pdf_url);
+                  openPdf(item.pdf_url, item.id);
                 }}
               >
 
@@ -140,13 +189,31 @@ export default function HomeScreen() {
                 />
               </View>
               {/* File Icon Status */}
-              <FileStatusIcon color={item.boxbg ?? Colors.button} downloaded={false} />
+              <FileStatusIcon color={item.boxbg ?? Colors.button} downloaded={!!downloadedIds[item.id]} />
             </TouchableOpacity>
           </View>
 
         )}
       />
     </PageLayout>
+
+    <Modal visible={downloadProgress !== null} transparent animationType="fade">
+      <View style={styles.downloadOverlay}>
+        <View style={styles.downloadCard}>
+          <Text style={styles.downloadTitle}>Downloading Book…</Text>
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${downloadProgress ?? 0}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.downloadPercent}>{downloadProgress ?? 0}%</Text>
+        </View>
+      </View>
+    </Modal>
+    </>
   )
 }
 
@@ -218,7 +285,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     marginBottom: 12,
-    padding: 14,
+    padding: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#f1f5f9",
@@ -233,8 +300,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   chapterBox: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -251,17 +318,55 @@ const styles = StyleSheet.create({
   chapterTitle: {
     flex: 1,
     marginLeft: 16,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "500",
     color: "#1e293b",
     lineHeight: 22,
   },
    chapterNumber: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
   },
   chevronContainer: {
     marginRight: 12,
+  },
+  downloadOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(2, 8, 38, 0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingInline: 32,
+  },
+  downloadCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+  },
+  downloadTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1e293b",
+    marginBottom: 16,
+  },
+  progressTrack: {
+    width: "100%",
+    height: 10,
+    backgroundColor: "#e2e8f0",
+    borderRadius: 9999,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: Colors.button,
+    borderRadius: 9999,
+  },
+  downloadPercent: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.paragraph,
   },
 });

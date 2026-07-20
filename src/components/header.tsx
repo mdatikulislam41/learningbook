@@ -15,7 +15,7 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
         <TouchableOpacity onPress={onBack} style={styles.iconButton}>
           <Icon name="arrow-back" size={24} color={Colors.button} />
         </TouchableOpacity>
-        <Text style={styles.pdfTitle}>PDF Viewer</Text>
+        <Text style={styles.pdfTitle}>Reding Book</Text>
         <TouchableOpacity onPress={onRotate} style={styles.iconButton}>
           <Icon name="phone-portrait-outline" size={24} color={Colors.button} />
         </TouchableOpacity>
