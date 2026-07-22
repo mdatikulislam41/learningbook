@@ -6,7 +6,7 @@ import type { ComponentProps } from 'react';
 import BookMark from '../screens/Home/BookMark';
 import HistoryScreen from '../screens/Home/History';
 import HomeStack from './HomeStack';
-import FormulaScreen from '../screens/Home/Formula';
+import FormulaStack from './FormulaStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -74,13 +74,8 @@ export default function BottomTab() {
         options={{ title: 'Home' }}
       />
       <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{ title: 'History' }}
-      />
-      <Tab.Screen
         name="Formula"
-        component={FormulaScreen}
+        component={FormulaStack}
         options={{ title: 'Formula' }}
       />
     </Tab.Navigator>

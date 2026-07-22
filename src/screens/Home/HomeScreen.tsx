@@ -181,13 +181,6 @@ export default function HomeScreen() {
                 <Text style={styles.chapterNumber}>{item.chapter}</Text>
               </View>
               <Text style={styles.chapterTitle}>{item.title}</Text>
-              <View style={styles.chevronContainer}>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color="#cbd5e1"
-                />
-              </View>
               {/* File Icon Status */}
               <FileStatusIcon color={item.boxbg ?? Colors.button} downloaded={!!downloadedIds[item.id]} />
             </TouchableOpacity>

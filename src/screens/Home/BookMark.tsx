@@ -5,8 +5,8 @@ import PageLayout from '../../components/PageLayout'
 export default function BookMark() {
   return (
     <PageLayout>
-      <View>
-        <Text>BookMark Screen</Text>
+      <View style={{padding:10}}>
+        <Text>BookMark Not Found</Text>
     </View>
     </PageLayout>
   )

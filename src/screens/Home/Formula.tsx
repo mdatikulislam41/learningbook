@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import PageLayout from '../../components/PageLayout';
 import { Colors } from '../../constants/Colors';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getOrDownloadPdf, isPdfDownloaded } from '../../services/download';
 
 type Formula = {
   id: number;
@@ -13,10 +16,49 @@ type Formula = {
   serial:number;
 };
 
+type RootStackParamList = {
+  FormulaScreen: undefined;
+  PdfViewer: {
+    localFile: string;
+  };
+};
+
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "FormulaScreen"
+>;
+
 export default function FormulaScreen() {
   const [formula, setFormula] = useState<Formula[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [downloadedIds, setDownloadedIds] = useState<Record<number, boolean>>({});
+  const navigation = useNavigation<NavigationProp>();
+
+  async function openPdf(pdfUrl: string, id: number) {
+    try {
+      setDownloadProgress(0);
+
+      const { localFile } = await getOrDownloadPdf(
+        pdfUrl,
+        "formula",
+        (percent) => {
+          setDownloadProgress(percent);
+        }
+      );
+      setDownloadedIds((prev) => ({ ...prev, [id]: true }));
+      navigation.navigate("PdfViewer", {
+        localFile: localFile,
+      });
+
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Error", "PDF download failed. Please try again.");
+    } finally {
+      setDownloadProgress(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -36,7 +78,15 @@ export default function FormulaScreen() {
         setErrorMessage(error.message);
         setFormula([]);
       } else {
-        setFormula((data ?? []) as Formula[]);
+        const list = (data ?? []) as Formula[];
+        setFormula(list);
+        const status: Record<number, boolean> = {};
+        await Promise.all(
+          list.map(async (f) => {
+            status[f.id] = await isPdfDownloaded(f.pdf_formula_url, "formula");
+          })
+        );
+        setDownloadedIds(status);
       }
 
       setLoading(false);
@@ -75,47 +125,110 @@ export default function FormulaScreen() {
   }
 
   return (
+    <>
     <PageLayout>
         <FlatList
                 data={formula}
                 contentContainerStyle={{ paddingBlockStart: 10, paddingInline: 20, paddingBottom: 16 }}
                 showsVerticalScrollIndicator={false}
                 keyExtractor={(item) => item.id.toString()}
-                // refreshing={refreshing}
-                // onRefresh={onRefresh}
                 renderItem={({ item }) => (
                   <View>
                     <TouchableOpacity
                       style={styles.card}
                       key={item.id}
                       activeOpacity={0.8}
-                      // onPress={()=>{
-                      //     openPdf(item.pdf_formula_url, item.id);
-                      //   }}
+                      onPress={()=>{
+                          openPdf(item.pdf_formula_url, item.id);
+                        }}
                       >
-        
+         
                       <View style={[styles.chapterBox, {
                         backgroundColor: item.box_bg ?? Colors.button
                       }]}>
                         <Text style={styles.chapterNumber}>{item.serial}</Text>
                       </View>
                       <Text style={styles.chapterTitle}>{item.title}</Text>
-                      <View style={styles.chevronContainer}>
+                      {/* <View style={styles.chevronContainer}>
                         <Ionicons
                           name="chevron-forward"
                           size={16}
                           color="#cbd5e1"
                         />
-                      </View>                     
+                      </View> */}
+                      <FileStatusIcon color={item.box_bg ?? Colors.button} downloaded={!!downloadedIds[item.id]} />
                     </TouchableOpacity>
                   </View>
         
                 )}
               />
     </PageLayout>
+
+    <Modal visible={downloadProgress !== null} transparent animationType="fade">
+      <View style={styles.downloadOverlay}>
+        <View style={styles.downloadCard}>
+          <Text style={styles.downloadTitle}>Downloading Book…</Text>
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${downloadProgress ?? 0}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.downloadPercent}>{downloadProgress ?? 0}%</Text>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
+const FileStatusIcon = ({ color, downloaded }: { color: string; downloaded: boolean }) => {
+  const iconColor = downloaded ? "#0d9488" : color;
+  const badgeColor = downloaded ? "#10b981" : color;
+  const badgeIcon = downloaded ? "checkmark-sharp" : "arrow-down-sharp";
+
+  return (
+    <View style={{
+    position: "relative",
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  }}>
+      <Ionicons name="document-text-outline" size={26} color={iconColor} />
+      <View style={{
+  position: "absolute",
+  bottom: 4,
+  right: 4,
+  backgroundColor: "#fff",
+  borderRadius: 9999,
+  padding: 1,
+
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.15,
+  shadowRadius: 2,
+
+  elevation: 2,
+}}>
+        <View
+          style={{
+            backgroundColor: badgeColor,
+  width: 16,
+  height: 16,
+  borderRadius: 9999,
+  alignItems: "center",
+  justifyContent: "center"
+}}
+        >
+          <Ionicons name={badgeIcon as any} size={10} color="#ffffff" />
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   

@@ -35,7 +35,7 @@ export default function Header({ variant = "default", onBack, onRotate }: Header
         {/* {topHeader[0]?.subject} */}
         গণিত সমাধান
         </Text>
-        <View style={{display:"flex",flexDirection:"row",gap:10,alignItems:"center",backgroundColor:"#132a6d",paddingInline:15,borderRadius:20}}>
+        <View style={{display:"flex",flexDirection:"row",gap:10,alignItems:"center",backgroundColor:"#132a6d",paddingInline:15,paddingBlock:6,borderRadius:20}}>
           <Ionicons name="book" size={16} color="#fff" />
           <Text style={{ color: Colors.white, fontSize: 14,fontWeight:500 }}>
           {/* {topHeader[0]?.class} */}
