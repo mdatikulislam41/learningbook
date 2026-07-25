@@ -21,6 +21,7 @@
     "react-native": "0.86.0",
     "react-native-blob-util": "^0.24.10",
     "react-native-config": "^1.6.1",
+    "react-native-device-info": "^15.0.2",
     "react-native-dotenv": "^3.4.11",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-orientation-locker": "^1.7.0",
