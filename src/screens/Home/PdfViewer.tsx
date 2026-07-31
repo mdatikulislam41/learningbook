@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View,Pressable,Text } from 'react-native';
 import Pdf from 'react-native-pdf';
 import Orientation from 'react-native-orientation-locker';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -14,6 +14,13 @@ export default function PdfViewer() {
   const [headerVisible, setHeaderVisible] = useState(true);
   const touchStart = React.useRef<{ x: number; y: number } | null>(null);
 
+
+  // New Start 
+  const pdfRef = useRef<Pdf>(null);
+
+const [currentPage, setCurrentPage] = useState(1);
+const [totalPages, setTotalPages] = useState(0);
+  // New End 
   const source = localFile.startsWith('file://')
     ? { uri: localFile }
     : { uri: `file://${localFile}` };
@@ -81,13 +88,45 @@ export default function PdfViewer() {
       onRotate={handleRotate}
     >
       <View style={styles.container} onTouchStart={handleStart} onTouchEnd={handleEnd}>
-        <Pdf
+        {/* <Pdf
           source={source}
           fitPolicy={0}
           style={styles.pdf}
           onError={error => console.log('PDF ERROR:', error)}
           onLoadComplete={pages => console.log('PDF pages:', pages)}
-        />
+        /> */}
+
+        <Pdf
+  ref={pdfRef}
+  source={source}
+  fitPolicy={0}
+  style={styles.pdf}
+  onError={error => console.log('PDF ERROR:', error)}
+  onLoadComplete={pages => {
+    setTotalPages(pages);
+  }}
+  onPageChanged={(page) => {
+    setCurrentPage(page);
+  }}
+/>
+
+<Pressable
+  style={styles.pageButton}
+  onPress={() => {
+    const next =
+      currentPage >= totalPages ? totalPages : currentPage + 1;
+
+    pdfRef.current?.setPage(next);
+  }}
+>
+  <Text style={styles.pageText}>
+    {currentPage}
+  </Text>
+
+  <Text style={styles.totalText}>
+    /{totalPages}
+  </Text>
+</Pressable>
       </View>
     </PageLayout>
   );
@@ -102,4 +141,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+
+
+  pageButton: {
+  position: 'absolute',
+  right: 15,
+  top: '50%',
+
+  width: 58,
+  height: 58,
+
+  borderRadius: 29,
+  backgroundColor: '#000000CC',
+
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+pageText: {
+  color: '#fff',
+  fontWeight: '700',
+  fontSize: 18,
+},
+
+totalText: {
+  color: '#ddd',
+  fontSize: 11,
+},
 });
+
+
+
