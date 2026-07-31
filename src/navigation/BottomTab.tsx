@@ -2,11 +2,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { PlatformPressable } from '@react-navigation/elements';
 import type { ComponentProps } from 'react';
-
-import BookMark from '../screens/Home/BookMark';
-import HistoryScreen from '../screens/Home/History';
 import HomeStack from './HomeStack';
 import FormulaStack from './FormulaStack';
+import History from '../screens/Home/History';
 
 const Tab = createBottomTabNavigator();
 
@@ -24,8 +22,8 @@ function TabIcon({ routeName, color, size, focused }: TabIconProps) {
 
   if (routeName === 'Home') {
     iconName = focused ? 'home' : 'home-outline';
-  } else if (routeName === 'BookMark') {
-    iconName = focused ? 'bookmark' : 'bookmark-outline';
+  } else if (routeName === 'History') {
+    iconName = focused ? 'time' : 'time-outline';
   }else if(routeName === 'Formula'){
 iconName = focused ? 'triangle' : 'triangle-outline';
   } else {
@@ -64,9 +62,9 @@ export default function BottomTab() {
       })}
     >
       <Tab.Screen
-        name="BookMark"
-        component={BookMark}
-        options={{ title: 'Bookmark' }}
+        name="History"
+        component={History}
+        options={{ title: 'History' }}
       />
       <Tab.Screen
         name="Home"

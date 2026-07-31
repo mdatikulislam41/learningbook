@@ -21,6 +21,9 @@ type RootStackParamList = {
   HomeScreen: undefined;
   PdfViewer: {
     localFile: string;
+    title: string;
+    type: 'chapter';
+    startPage?: number;
   };
 };
 
@@ -79,7 +82,7 @@ export default function HomeScreen() {
         setLoading(false);
       }
     }
-    async function openPdf(pdfUrl: string, id: number) {
+    async function openPdf(pdfUrl: string, id: number, title: string) {
   try {
     setDownloadProgress(0);
 
@@ -93,6 +96,8 @@ export default function HomeScreen() {
     setDownloadedIds((prev) => ({ ...prev, [id]: true }));
     navigation.navigate("PdfViewer", {
       localFile: localFile,
+      title: title,
+      type: 'chapter',
     });
 
   } catch (e) {
@@ -170,7 +175,7 @@ export default function HomeScreen() {
               key={item.id}
               activeOpacity={0.8}
               onPress={()=>{
-                  openPdf(item.pdf_url, item.id);
+                  openPdf(item.pdf_url, item.id, item.title);
                 }}
               >
 

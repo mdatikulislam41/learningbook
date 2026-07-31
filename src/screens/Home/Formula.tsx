@@ -20,6 +20,9 @@ type RootStackParamList = {
   FormulaScreen: undefined;
   PdfViewer: {
     localFile: string;
+    title: string;
+    type: 'formula';
+    startPage?: number;
   };
 };
 
@@ -36,7 +39,7 @@ export default function FormulaScreen() {
   const [downloadedIds, setDownloadedIds] = useState<Record<number, boolean>>({});
   const navigation = useNavigation<NavigationProp>();
 
-  async function openPdf(pdfUrl: string, id: number) {
+  async function openPdf(pdfUrl: string, id: number, title: string) {
     try {
       setDownloadProgress(0);
 
@@ -50,6 +53,8 @@ export default function FormulaScreen() {
       setDownloadedIds((prev) => ({ ...prev, [id]: true }));
       navigation.navigate("PdfViewer", {
         localFile: localFile,
+        title: title,
+        type: 'formula',
       });
 
     } catch (e) {
@@ -139,7 +144,7 @@ export default function FormulaScreen() {
                       key={item.id}
                       activeOpacity={0.8}
                       onPress={()=>{
-                          openPdf(item.pdf_formula_url, item.id);
+                          openPdf(item.pdf_formula_url, item.id, item.title);
                         }}
                       >
          

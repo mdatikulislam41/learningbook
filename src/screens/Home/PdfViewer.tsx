@@ -1,27 +1,65 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View,Pressable,Text } from 'react-native';
+import { StyleSheet, View, Pressable, Text } from 'react-native';
 import Pdf from 'react-native-pdf';
 import Orientation from 'react-native-orientation-locker';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import PageLayout from '../../components/PageLayout';
+import { saveReadingHistory } from '../../services/readingHistory';
+
+type RouteParams = {
+  localFile: string;
+  title: string;
+  type: 'chapter' | 'formula';
+  startPage?: number;
+};
 
 export default function PdfViewer() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { localFile } = route.params;
+  const { localFile, title, type, startPage }: RouteParams = route.params || {};
 
   const [isLandscape, setIsLandscape] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const touchStart = React.useRef<{ x: number; y: number } | null>(null);
 
+  const pdfRef = useRef<any>(null);
+  const [currentPage, setCurrentPage] = useState(startPage || 1);
+  const [totalPages, setTotalPages] = useState(0);
+  const pdfTitle = title || 'Untitled';
+  const pdfType = type || 'chapter';
 
-  // New Start 
-  const pdfRef = useRef<Pdf>(null);
+  const latestPageRef = useRef(currentPage);
+  const latestTotalRef = useRef(totalPages);
+  const localFileRef = useRef(localFile);
+  const pdfTitleRef = useRef(pdfTitle);
+  const pdfTypeRef = useRef(pdfType);
+  const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-const [currentPage, setCurrentPage] = useState(1);
-const [totalPages, setTotalPages] = useState(0);
-  // New End 
-  const source = localFile.startsWith('file://')
+  latestPageRef.current = currentPage;
+  latestTotalRef.current = totalPages;
+  localFileRef.current = localFile;
+  pdfTitleRef.current = pdfTitle;
+  pdfTypeRef.current = pdfType;
+
+  const saveDebounced = () => {
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+    }
+    saveDebounceRef.current = setTimeout(() => {
+      if (latestTotalRef.current > 0 && localFileRef.current) {
+        saveReadingHistory({
+          pdfUrl: localFileRef.current,
+          localFile: localFileRef.current,
+          title: pdfTitleRef.current,
+          currentPage: latestPageRef.current,
+          totalPages: latestTotalRef.current,
+          type: pdfTypeRef.current,
+        });
+      }
+    }, 400);
+  };
+
+  const source = localFile?.startsWith('file://')
     ? { uri: localFile }
     : { uri: `file://${localFile}` };
 
@@ -37,6 +75,20 @@ const [totalPages, setTotalPages] = useState(0);
     return () => {
       Orientation.removeOrientationListener(onOrientationChange);
       Orientation.unlockAllOrientations();
+
+      if (saveDebounceRef.current) {
+        clearTimeout(saveDebounceRef.current);
+      }
+      if (latestTotalRef.current > 0 && localFileRef.current) {
+        saveReadingHistory({
+          pdfUrl: localFileRef.current,
+          localFile: localFileRef.current,
+          title: pdfTitleRef.current,
+          currentPage: latestPageRef.current,
+          totalPages: latestTotalRef.current,
+          type: pdfTypeRef.current,
+        });
+      }
     };
   }, []);
 
@@ -47,6 +99,12 @@ const [totalPages, setTotalPages] = useState(0);
       setHeaderVisible(true);
     }
   }, [isLandscape]);
+
+  useEffect(() => {
+    if (totalPages > 0 && startPage && startPage > 1 && startPage <= totalPages) {
+      pdfRef.current?.setPage(startPage);
+    }
+  }, [totalPages, startPage]);
 
   const toggleHeader = () => {
     if (isLandscape) {
@@ -88,45 +146,41 @@ const [totalPages, setTotalPages] = useState(0);
       onRotate={handleRotate}
     >
       <View style={styles.container} onTouchStart={handleStart} onTouchEnd={handleEnd}>
-        {/* <Pdf
+        <Pdf
+          ref={pdfRef}
           source={source}
           fitPolicy={0}
           style={styles.pdf}
           onError={error => console.log('PDF ERROR:', error)}
-          onLoadComplete={pages => console.log('PDF pages:', pages)}
-        /> */}
+          onLoadComplete={pages => {
+            setTotalPages(pages);
+            if ((startPage && startPage > 1) || latestPageRef.current > 1) {
+              saveDebounced();
+            }
+          }}
+          onPageChanged={(page) => {
+            setCurrentPage(page);
+            saveDebounced();
+          }}
+        />
 
-        <Pdf
-  ref={pdfRef}
-  source={source}
-  fitPolicy={0}
-  style={styles.pdf}
-  onError={error => console.log('PDF ERROR:', error)}
-  onLoadComplete={pages => {
-    setTotalPages(pages);
-  }}
-  onPageChanged={(page) => {
-    setCurrentPage(page);
-  }}
-/>
+        <Pressable
+          style={styles.pageButton}
+          onPress={() => {
+            const next =
+              currentPage >= totalPages ? totalPages : currentPage + 1;
 
-<Pressable
-  style={styles.pageButton}
-  onPress={() => {
-    const next =
-      currentPage >= totalPages ? totalPages : currentPage + 1;
+            pdfRef.current?.setPage(next);
+          }}
+        >
+          <Text style={styles.pageText}>
+            {currentPage}
+          </Text>
 
-    pdfRef.current?.setPage(next);
-  }}
->
-  <Text style={styles.pageText}>
-    {currentPage}
-  </Text>
-
-  <Text style={styles.totalText}>
-    /{totalPages}
-  </Text>
-</Pressable>
+          <Text style={styles.totalText}>
+            /{totalPages}
+          </Text>
+        </Pressable>
       </View>
     </PageLayout>
   );
@@ -156,19 +210,16 @@ const styles = StyleSheet.create({
 
   justifyContent: 'center',
   alignItems: 'center',
-},
+  },
 
-pageText: {
+  pageText: {
   color: '#fff',
   fontWeight: '700',
   fontSize: 18,
-},
+  },
 
-totalText: {
+  totalText: {
   color: '#ddd',
   fontSize: 11,
-},
+  },
 });
-
-
-
