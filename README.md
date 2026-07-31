@@ -95,3 +95,9 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+
+
+#Ads: 
+-Apps Id: ca-app-pub-7718350266682450~7410636015
+-Unit Id: ca-app-pub-7718350266682450/8476305676

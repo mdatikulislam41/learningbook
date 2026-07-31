@@ -24,8 +24,8 @@ const {
   return (
     <SafeAreaProvider style={{backgroundColor:Colors.background}}>
       <StatusBar
-        barStyle={isDarkMode ? 'dark-content' : 'dark-content'}
-        backgroundColor={isDarkMode ? '#000000' : '#000'}
+         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={Colors.background}
         translucent={false}
       />
       <AppNavigator/>

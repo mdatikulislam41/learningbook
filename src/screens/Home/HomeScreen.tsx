@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import PageLayout from '../../components/PageLayout'
@@ -9,14 +9,8 @@ import { Colors } from '../../constants/Colors';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { getOrDownloadPdf, isPdfDownloaded } from '../../services/download';
-
-type Chapter = {
-  id: number;
-  title: string;
-  chapter: number | string;
-  boxbg?: string;
-  pdf_url: string;
-};
+import { cacheChapters, getCachedChapters } from '../../services/chapterCache';
+import type { Chapter } from '../../types/chapter';
 type RootStackParamList = {
   HomeScreen: undefined;
   PdfViewer: {
@@ -41,13 +35,33 @@ export default function HomeScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [noInternet, setNoInternet] = useState(false);
   const navigation = useNavigation<NavigationProp>();
-    async function loadChapters(isRefresh = false) {
+    const loadDownloadedStatus = useCallback(async (list: Chapter[]) => {
+      const status: Record<number, boolean> = {};
+      await Promise.all(
+        list.map(async (c) => {
+          status[c.id] = await isPdfDownloaded(c.pdf_url, "classSix");
+        })
+      );
+      setDownloadedIds(status);
+    }, []);
+
+    const loadChapters = useCallback(async (isRefresh = false) => {
       if (isRefresh) {
         setRefreshing(true);
         setErrorMessage(null);
         setNoInternet(false);
       } else {
         setLoading(true);
+      }
+
+      if (!isRefresh) {
+        const cachedChapters = await getCachedChapters();
+        if (cachedChapters) {
+          setChapters(cachedChapters);
+          await loadDownloadedStatus(cachedChapters);
+          setLoading(false);
+          return;
+        }
       }
 
       const { data, error } = await supabase
@@ -67,13 +81,10 @@ export default function HomeScreen() {
       } else {
         const list = (data ?? []) as Chapter[];
         setChapters(list);
-        const status: Record<number, boolean> = {};
-        await Promise.all(
-          list.map(async (c) => {
-            status[c.id] = await isPdfDownloaded(c.pdf_url, "classSix");
-          })
-        );
-        setDownloadedIds(status);
+        setErrorMessage(null);
+        setNoInternet(false);
+        await cacheChapters(list);
+        await loadDownloadedStatus(list);
       }
 
       if (isRefresh) {
@@ -81,7 +92,7 @@ export default function HomeScreen() {
       } else {
         setLoading(false);
       }
-    }
+    }, [loadDownloadedStatus]);
     async function openPdf(pdfUrl: string, id: number, title: string) {
   try {
     setDownloadProgress(0);
@@ -109,7 +120,7 @@ export default function HomeScreen() {
 }
       useEffect(() => {
         loadChapters();
-      }, []);
+      }, [loadChapters]);
 
       const onRefresh = () => loadChapters(true);
       
