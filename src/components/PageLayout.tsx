@@ -1,7 +1,6 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "./Header";
-import { View } from "react-native";
 import { Colors } from "../constants/Colors";
+import Header from "./header";
 
 type PageLayoutProps = {
   children: React.ReactNode;

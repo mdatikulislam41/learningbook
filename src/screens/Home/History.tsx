@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import PageLayout from '../../components/PageLayout';
 import Ionicons from '@react-native-vector-icons/ionicons';

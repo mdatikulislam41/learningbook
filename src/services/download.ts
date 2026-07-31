@@ -53,7 +53,7 @@ export async function downloadPdf(
     });
 
   await RNBlobUtil.fs.writeFile(filePath, res.base64(), "base64");
-  console.log("✅ Saved:", filePath, "bytes:", res.respInfo?.bytesWritten);
+  console.log("✅ Saved:", filePath, "bytes:", (res.respInfo as any).bytesWritten);
 
   if (onProgress) {
     onProgress(100);
