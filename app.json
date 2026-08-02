@@ -1,4 +1,8 @@
 {
   "name": "learningBook",
-  "displayName": "learningBook"
+  "displayName": "learningBook",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-7718350266682450~7410636015",
+    "ios_app_id": "ca-app-pub-7718350266682450~7410636015"
+  }
 }

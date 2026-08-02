@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getOrDownloadPdf, isPdfDownloaded } from '../../services/download';
 import { cacheChapters, getCachedChapters } from '../../services/chapterCache';
 import type { Chapter } from '../../types/chapter';
+import { showPdfOpenInterstitialAd } from '../../services/ads';
 type RootStackParamList = {
   HomeScreen: undefined;
   PdfViewer: {
@@ -105,6 +106,8 @@ export default function HomeScreen() {
       }
     );
     setDownloadedIds((prev) => ({ ...prev, [id]: true }));
+    setDownloadProgress(null);
+    await showPdfOpenInterstitialAd();
     navigation.navigate("PdfViewer", {
       localFile: localFile,
       title: title,

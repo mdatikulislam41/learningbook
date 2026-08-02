@@ -7,6 +7,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getOrDownloadPdf, isPdfDownloaded } from '../../services/download';
+import { showPdfOpenInterstitialAd } from '../../services/ads';
 
 type Formula = {
   id: number;
@@ -51,6 +52,8 @@ export default function FormulaScreen() {
         }
       );
       setDownloadedIds((prev) => ({ ...prev, [id]: true }));
+      setDownloadProgress(null);
+      await showPdfOpenInterstitialAd();
       navigation.navigate("PdfViewer", {
         localFile: localFile,
         title: title,
